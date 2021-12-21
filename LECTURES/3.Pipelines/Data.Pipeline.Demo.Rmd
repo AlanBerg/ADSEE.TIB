@@ -1,0 +1,183 @@
+---
+title: "Data Pipeline"
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    self_contained: yes
+---
+
+```{r, echo=FALSE}
+# Ignore as just removing noisy messages when packages start
+sp <- suppressPackageStartupMessages
+```
+
+
+# Data Pipeline
+
+In this Notebook we will show you the basics of taking a lump of text and splitting into a cleaned set of words. The ordering of the words is not taken into account. This approach is often called Bag Of Words.
+
+# TidyText Format
+
+[Remember](https://www.tidytextmining.com/tidytext.html):
+
+- Each variable is a column
+- Each observation is a row
+- Each type of observational unit is a table
+
+And the [workflow](https://www.tidytextmining.com/tidytext.html) is
+
+![Figure 1: Typical workflow](./IMG/flow.png)
+
+# LOAD Data and convert to Tibble
+
+The following code loads in the first 1000 adverts into a tibble called `my.job`
+
+```{r}
+sp(library(tidyverse))
+sp(library(tidytext))
+file.jobs <- "../../DATA/MonsterBoard-2013-n=20000.Rdata"
+load(file.jobs)
+my.job <- tibble(Row = seq_along(sample$JobBody[1:1000]) , text = sample$JobBody[1:1000])
+
+# Review first two rows
+my.job[1:2,]
+```
+
+# Tokenise
+
+We take advantage of  tidytext methods and break the adverts down into their words. Notice the row numbers. We can later, replace the row numbers later with for example the job title and then group by the title. However, the grouping is outside the scope of this basic data pipeline.
+
+```{r}
+# Create my.words by splitting the adverts into words
+# Row is the index of the job advert. E.G: 1 is the first advert.
+my.words <- my.job %>%  unnest_tokens(word, text)
+head(my.words, n=10)
+```
+
+
+# Count
+
+Next we count the number of times a word has been used. Ignoring the row column.
+Notice words such as `and` which are common words used in all job descritpions. These type of words that do not carry relevant information for a study are called ***STOP WORDS***
+
+```{r}
+# Counting the number of times each word is used, ignoring in which Row
+# sort by largest
+my.freq <- my.words %>%
+  count(word, sort = TRUE) 
+# Look at the first few words
+head(my.freq)
+```
+
+# Plot Top 20 words
+
+We now plot the frequencies. Remember:
+
+> Visualize, Visualize, Visualize
+
+```{r}
+library(ggthemes)
+# filter out words mentioned less than 4501
+# Plot in column format
+# Use the pander look and feel
+my.freq %>% filter(n > 4500) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL, x="Number of times mentioned") +
+  theme_pander()
+```
+
+# Remove stop words AND Plot top 20
+
+Let's remove the stop words and add our own custom stop word nbsp which is todo with a parsing failure around HTML in the text.
+
+Notice the remaining words have more meaning and are easier now to spot without the stop words.
+
+```{r}
+# Load in stop_words
+data(stop_words)
+# Look at the last few stop words
+tail(stop_words)
+# Add our own custom stop word
+stop_words <- rbind(stop_words,c("nbsp","Custom"))
+tail(stop_words)
+
+# Add to the pipeline the removal of stop words via anti_join
+my.words <- my.job %>%  unnest_tokens(word, text) %>%  anti_join(stop_words)
+my.freq <- my.words %>%
+  count(word, sort = TRUE) 
+
+# Plot
+my.freq %>% filter(n > 700) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL, x="Number of times mentioned") +
+  theme_pander()
+```
+
+# Stemming
+
+Stemming is the process of reducing inflected (or sometimes derived) words to their [word stem](https://en.wikipedia.org/wiki/Stemming).
+For example, a stemming algorithm might also reduce the words fishing, fished, and fisher to the stem fish.
+
+In text analysis, stemming reduces words to their base form so that we count the use of the type of word once, summing up its importance accross all of it's forms.
+
+```{r}
+sp(library(SnowballC))
+my.freq.10 <- head(my.freq,n=10)
+# Call the wordStem method on thw word and change the data in the word column via mutate
+my.freq.10 %>% mutate(word = wordStem(word))
+```
+
+
+
+# Tokenise Bigrams
+# Plot top 20
+
+A [bigram](https://en.wikipedia.org/wiki/Bigram) or digram is a sequence of two adjacent elements from a string of tokens.
+
+The frequency of Bigrams may also be relevant to your study.
+
+```{r}
+# Look at bigrams via adding the parameters token = "ngrams", n = 2
+my.words.bi <- my.job %>%  unnest_tokens(word, text, token = "ngrams", n = 2)
+my.freq.bi <- my.words.bi %>%
+  count(word, sort = TRUE)
+# Top 10 bigrams
+head(my.freq.bi, n=10)
+```
+However, again we need to deal with stopwords confusing the search.
+
+
+# Remove Bigram Stopwords
+
+One strategy for removing stopwords from bigrams is to search for unigram stopwords and removing any bigram that contains a stopword.
+
+```{r}
+# Based on the following article
+# https://www.programmingwithr.com/how-to-create-unigrams-bigrams-and-n-grams-of-app-reviews/
+my.freq.bi.cleaned <-  my.freq.bi %>% separate(word, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>% 
+  unite(word,word1, word2, sep = " ")
+
+head(my.freq.bi.cleaned, n=10)
+```
+
+# More
+
+As mentioned previously we can group the job adverts by for example city, skill, title, salary, etc. However, this is for later in a more advanced course.
+
+# Package Versions
+
+This section is for debugging.
+
+```{r}
+print(sessionInfo())
+```
+
+

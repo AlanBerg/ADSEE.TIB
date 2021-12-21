@@ -1,0 +1,176 @@
+---
+title: "Keywords In Context"
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    self_contained: yes
+---
+
+
+```{r, echo=FALSE}
+# Ignore as just removing noisy messages when packages start
+sp <- suppressPackageStartupMessages
+```
+
+# KWIC
+
+In this Notebook we will introduce you to an example of KeyWords In Context. In a later PDF handout you will be introduced to the Orange3 Tool which allows you to perform KWIC and more complex tasks via a drag and drop GUI.
+
+## Load
+
+```{r}
+file.jobs <- "../../DATA/MonsterBoard-2013-n=20000.Rdata"
+load(file.jobs)
+```
+
+## Job Description
+
+Let's get a feeling for the Job descriptions.
+
+
+```{r}
+sp(library(ggplot2))
+library(ggthemes)
+# Names of the dimensions
+names(sample)
+# What is the type of the JobBody dimension
+class(sample$JobBody)
+# Lets look at how many characters a Jobbody has and place them in a data.frame with one column
+jb.len <- as.data.frame(nchar(sample$JobBody))
+names(jb.len) <- "No.Characters"
+# What does the data look like
+head(jb.len)
+
+# Make a nice bar chart
+ggplot(jb.len, aes(x=No.Characters))+ geom_bar()+
+    ggtitle("Number of Job descriptions vs length") +
+    ylim(0,20)+theme_economist_white()
+
+# A density plot is easier to the eyes
+ggplot(jb.len, aes(x=No.Characters))+ geom_density()+
+    ggtitle("Number of Job descriptions vs length") +
+    theme_economist_white()
+
+# What is the mean length
+# If you want a more robust mean look at trimming out the extreme values
+# ?mean
+mean(jb.len$No.Characters)
+```
+
+## Naming conventions
+
+Notice we loaded in the sample set of job adverts with the name `sample`. This has the same name as a function that samples data. Luckily, R understands the difference between a  `function` and a `data.table` by the context in which it is called.
+
+To avoid issues you will need to be consistent with your naming conventions. And yes it is easy not to be consistent.
+
+A great Blog on this subject you can find [here](https://www.r-bloggers.com/2014/07/consistent-naming-conventions-in-r/).
+
+The blogger suggests one of the following 5 approaches
+
+1. alllowercase: e.g. `adjustcolor`
+1. period.separated: e.g. `plot.new`
+1. underscore_separated: e.g. `numeric_version`
+1. lowerCamelCase: e.g. `addTaskCallback`
+1. UpperCamelCase: e.g. `SignatureMethod`
+
+And of course make sure your names have a meaning.
+
+For those of you looking for a Job at Google. Here is their [naming conventions](https://google.github.io/styleguide/Rguide.html).
+
+
+# Sampling
+
+Big data can slow you down. It is often better to take a random sample and write your code and visualizations first. Later, you can always refine. However, that depends on your research question. Therefore, before or just after Exploratory Data Analysis (depending if you are an experimental researcher) you need to settle on a set of questions to answer.
+
+The `sample` function performs pseudo random selection.
+
+Pseudo random means that the numbers look random and follow a prescribed distribution, however, the numbers are generated via a deterministic mathematical formular. To start at a specific point in the sequence you can  `set.seed`
+
+Most pseudo random generators are chaotic in the sense that a small change in the seed can produce a big change in the sequence of numbers.
+
+
+```{r}
+# look at the first entry
+sample$JobBody[1]
+# Choose 5 numbers between 1 to 4 replacing the choice. E.G., you can select the number again
+sample(1:4,5,replace=TRUE)
+
+# This will cause an error as you cannot sample more than you have if you cannot select the number again.
+# sample(1:4,5,replace=FALSE)
+
+# Let's start at a known point in the sequence
+set.seed(1245)
+# Expect 2 2 2 4 2
+sample(1:4,5,replace=TRUE)
+
+# Count the number of rows of the badly named sample data.table
+no.row <- nrow(sample)
+
+# Fix the location in the sequence of pseudo random numbers
+set.seed(1246)
+# 5615, 18018
+
+# Choose two rows randomly
+rows <- sample(1:no.row,size=2, replace=FALSE)
+
+# Display the JobBody for the rows selected
+sample$JobBody[rows]
+```
+
+# KWIC
+
+The following code performs:
+
+1. KWIC on the two rows selected for the word Financial, displaying the results. Notice the window of 3 words before and after the chosen word.
+1. Looks for the word legal in the first 500 job samples
+1. Looks for the word gender in all job descriptions in the sample `data.table`
+1. Finally, we look for the most used words before the word gender in all of the sample. What are you seeing?
+
+```{r}
+sp(library(quanteda))
+sp(library(tidyr))
+
+# See https://quanteda.io for tutorials and examples
+
+# What is the first row number
+rows[1]
+
+# Look for the word Financial
+# (A) for 1 sample
+kwic(tokens(sample$JobBody[rows[1]]),pattern = "Financial", window = 3, valuetype = "fixed")
+
+# (B) Now lets store results in a data.frame for the word gender and legal
+kwic(tokens(sample$JobBody[rows]),pattern = "Financial", window = 3, valuetype = "fixed")
+all.legal <- kwic(tokens(sample$JobBody[1:500]),pattern = "legal", window = 3, valuetype = "fixed")
+all.gender <- kwic(tokens(sample$JobBody),pattern = "gender", window = 5, valuetype = "fixed")
+# Create a cross tabulation of counts of words before the word gender
+info <- as.data.frame(table(all.gender$pre))
+info
+```
+
+> Visualize, visualize, visualize
+
+```{r}
+# Let's plot the top 40 entries
+# reorder orders the bars into Frequency
+# coord_flip flips the coordinates
+# Plenty examples on the Internet
+info %>% 
+    head(n=40) %>% 
+    ggplot() + geom_bar(aes(x = reorder(Var1, Freq),
+                            y = Freq), stat = "identity",
+                        fill = "darkred") + coord_flip() +
+    labs(title = "Frequency of words before the word gender",
+         subtitle = "KWIC") + xlab("Pre terms")
+```
+
+# Package Versions
+
+This section is for debugging.
+
+```{r}
+print(sessionInfo())
+```
+

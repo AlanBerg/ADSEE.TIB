@@ -1,0 +1,226 @@
+---
+title: "R Notebook"
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    self_contained: yes
+---
+
+```{r, echo=FALSE}
+# Ignore as just removing noisy messages when packages start
+sp <- suppressPackageStartupMessages
+```
+
+
+
+# Exploratory Data Analysis
+
+It is easy to say the wrong things with data. Our explanations depend on our assumptions and our assumptions can be wrong.
+
+As early as possible in the data life cycle it is important to look at the data, it's biases and what is missing. We need to explore.
+
+
+# LOAD Data
+
+Firstly, we need to load in the data.
+
+The R language can import and export data in many formats. Here we load in data from an R native format and also CSV file.
+
+
+```{r}
+file.jobs <- "../../DATA/MonsterBoard-2013-n=20000.Rdata"
+file.kwic <- "../../DATA/KWIC.csv"
+df.KWIC <- read.csv(file.kwic, sep=";", comment.char="#")
+
+# Search for help on function
+?read.csv
+?load
+
+load(file.jobs)
+
+# What is the type of the object we just loaded
+class(df.KWIC)
+# What are the names used for the dimensions
+names(df.KWIC)
+names(sample)
+```
+
+# All data is dirty
+
+In this section we show that the city information has missing data. The typist of the data has used both upper and lower case.
+
+> Assume that your data is dirty and that you have to find where
+
+```{r}
+attach(sample)
+# Create a cross tabulation as a data.frame
+city.list <- as.data.frame(table(City))
+# Order the cross tabulation
+city.list <- city.list[order(city.list$Freq, decreasing=TRUE),]
+# Look at the first ten entries
+head(city.list,n=10)
+```
+The word London has been written a number of times in slightly different upper and lower case formats.
+
+```{r}
+# Look at the different ways London is written. Typical input error.
+?tolower
+city.list[tolower(city.list$City) == "london",]
+```
+
+OK, let's clean up and plot again by changing all words to lowercase.
+
+
+```{r}
+City <- tolower(City)
+City[City==""] <- "Unknown"
+City[City=="city"] <- "Unknown"
+city.list <- as.data.frame(table(City))
+city.list <- city.list[order(city.list$Freq, decreasing=TRUE),]
+head(city.list,n=20)
+```
+
+# Visualise
+
+Now we visualize. In this case we are plotting the top 20 cities listed against their frequency.
+
+Yes, our data is biased as it mostly represents jobs within London
+
+```{r}
+library(ggplot2)
+
+# select the first 20 entries
+top <- 20
+city.list.20 <- head(city.list, n=top)
+# Now use GGPLOT2 to create a nice looking chart
+# There are plenty examples on the Internet. Well worth experimenting
+plt.city <- ggplot(city.list.20, aes(x=reorder(City,Freq),y=Freq)) + 
+    geom_bar(fill="blue",stat="identity") + 
+    coord_flip() +
+    xlab("City") + ylab("Number of advertisments") +
+    ggtitle("Location of Advertisments")
+
+plt.city
+```
+
+With minor effort we can create a look and a feel using different themes from the `ggthemes` library
+
+
+```{r}
+library(ggthemes)
+plt.city + theme_hc()
+
+```
+# Postal Codes
+
+Postal codes turn out to be particularly dirty so we clean up.
+
+The implication for this data source is that we have to make assumptions about the randomness of postal codes, making any study weaker.
+
+> Missing data is a typical issue when dealing with raw data
+
+Do not make assumptions abour the quality of data. Visualize distributions where you can.
+
+```{r}
+head(PostalCode)
+PostalCode[PostalCode=="NULL"] <- NA
+head(PostalCode)
+
+# Measure the number of characters in an entry
+?nchar
+max(nchar(PostalCode, keepNA=FALSE))
+min(nchar(PostalCode, keepNA=FALSE))
+df.chars <- data.frame(chars =nchar(PostalCode, keepNA=FALSE))
+ggplot(df.chars, aes(x=chars)) + geom_bar(fill="blue") + theme_hc()
+
+# What is the percentage of entries that have a well formed postcode?
+sum(df.chars$chars==6)/nrow(df.chars)
+
+```
+# Handling dates
+
+Handling dates can be difficult. However, with the [`lubridate`](https://lubridate.tidyverse.org/) package we can minimize our effort.
+
+You need to tell R that you are working on a DATE object by converting strings into a DATE.
+
+> Bias in vacancy data can include job releases on a particular day of the week
+
+```{r}
+# We are looking at strings
+class(DateActive)
+DateActive <- as.Date(DateActive)
+# Now the entries are treated as dates
+class(DateActive)
+
+# Let's make our lives easier
+sp(library(lubridate))
+# ?wday
+# Let's look at the first entry to show how things work
+wday(DateActive[1], label=TRUE)
+# Let's create a new dimension named WDAY with the day of the week of the DATE assigned
+sample$WDAY <- wday(DateActive, label=TRUE)
+
+# Visualize where you can.
+ggplot(sample,aes(x=WDAY)) + 
+    geom_bar(fill="blue") + theme_hc() +
+    xlab("Day of week") + ggtitle("Number of Advertisments vs\nDay of Week")
+```
+> Keep asking yourself, where is the bias in the data.
+
+# Automated Report
+
+There are even cheats with quickly scanning the data, for example using the [`datexplorer`](https://boxuancui.github.io/DataExplorer/) package
+
+```{r}
+#https://boxuancui.github.io/DataExplorer/
+sp(library(DataExplorer))
+
+# Output an introduction to the dataset city.list
+introduce(city.list)
+# Turn NA (Not available, no data) to the text Unknown
+city.list[city.list == "Unknown"] <- NA
+# Look at the impact on the introduction
+introduce(city.list)
+# Make a nice report
+plot_intro(city.list, ggtheme = theme_hc(),
+             title = "City counts")
+# Now for something more complex
+introduce(sample)
+plot_intro(sample, ggtheme = theme_hc(),
+             title = "20,000 Advertisments")
+plot_bar(sample)
+
+# Consider creating a full report
+?create_report
+#create_report(sample, report_title = "20,000 Advertisements", output_file="eda-report-sample.html")
+```
+
+
+# Save Data
+
+It is straight forward to save data in one format to another within R. Here we convert the data originally in CSV format to a compressed R format.
+
+```{r}
+# You may need to Change the location of data file
+file.kwic.Rdata <- "../../DATA/KWIC.Rdata"
+# Notice Significantly compressed
+save(df.KWIC, file = file.kwic.Rdata, compress=TRUE)
+```
+
+# Look at the first job advertisment
+
+Finally we can look at specific job advertisments.
+
+```{r}
+sample$JobBody[1]
+```
+
+# Package Versions
+
+This section is for debugging.
+
+```{r}
+print(sessionInfo())
+```

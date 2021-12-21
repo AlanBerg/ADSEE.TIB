@@ -1,0 +1,249 @@
+---
+title: "Enrichment of Data"
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    self_contained: yes
+---
+
+# Introduction
+
+In this notebook you will be shown examples of enriching the data you already have available. Luckily, and by design within R there are plenty of sources of Economic and other data freely available. 
+
+Examples include:
+
+* Census data
+* Economic metrics
+* Crime rates
+* House prices
+* And many more
+
+The datasets can be delivered as part of R packages. You may be given tools to scrape data from websites. The particular package may call [Web API's](https://en.wikipedia.org/wiki/Web_API), a method of talking with an external data source connected to the Internet.
+
+The inbuilt packages have the advantage of ease of use. However, tend not to be up to date. Web scrapping is liable to get broken as the websites that you are scrapping from are updated. The Web API's tend to be the freshest sources of information. However, you normally need to sign on for an account and ask for a token (a shared secret) to connect.
+
+Let us explore a representative set of data source types.
+
+
+# Load our own data
+
+First let's load our own data.
+
+1. 20000 Job adverts (Monsterboard)
+1. Number of Job adverts per day over a two year period for the American Job market (BurningGlass)
+
+```{r,  warning=FALSE, message=FALSE}
+# Load in libraries
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+library(quantmod)
+library(rvest)
+
+# Load in data
+file.jobs <- "../../DATA/MonsterBoard-2013-n=20000.Rdata"
+file.count <- "../../DATA/Day.Count.Rdata"
+load(file.jobs)
+load(file.count)
+```
+# Inbuilt datasets
+
+The packages within R  contain useful data sets mostly aimed at practicing the use of the R package themselves.
+The `data` command loads the relevant dataset into R.
+
+Remember visualisation is important to get to know our datasets.
+
+
+```{r,  warning=FALSE, message=FALSE}
+
+# Ask for help on the data function
+?data
+# Search for help online for the data function
+??data
+
+# For more information on the dataset
+# https://ggplot2.tidyverse.org/reference/economics.html
+data(package = "ggplot2")
+
+# Load in the data
+data(economics)
+# Get information on the data that you just loaded
+help(economics)
+# Review the data
+glimpse(economics)
+
+# What is the data range
+max(economics$date)
+min(economics$date)
+
+# Visualise, visualise, visualise
+ggplot(economics,aes(x=date,y=pop))+
+    geom_line(color="blue", size=5)+theme_hc() +
+    ylim(0,max(economics$pop))+ ggtitle("US population")
+
+```
+
+# Checking the sanity of our data
+
+By visualizing the Job adverts we see that the sampling is biased.
+Therefore, we use a second dataset for time series examples.
+
+>  stat_smooth(method = "gam", formula = y ~ s(x), size = 1)
+
+`stats_smooth`Plots a smoothed line using what is called Generalized Addictive Model. You do not need to know the details as this is used just as a visual guide. However, It is clear that there are seasonal trends in the dataset.
+
+As you can expect R has a range of libraries that help with seasonal decomposition. For the curious consider reading [A little book of R timeseries](https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html)
+
+
+```{r}
+# It is better to make copies of our data and then transform. This way we can keep different versions of the dataset
+# Later you can always remove the intermediate datasets.
+transformed <- sample
+rm(sample)
+attach(transformed)
+DateActive <- as.Date(DateActive)
+interval <- max(DateActive)-min(DateActive)
+interval
+df.ts.active <- as.data.frame(table(DateActive))
+plot(df.ts.active)
+
+# Example data for the volumn of American Job adverts.
+# https://cran.r-project.org/web/packages/TSstudio/vignettes/Plotting_Time_Series.html
+ggplot(cnt,aes(x=JobDate,y=Total.adverts))+
+    geom_line(color="black") + ylim(0,max(cnt$Total.adverts)) +
+    theme_hc() + ggtitle("Volumn Adverts US", subtitle = "Burning Glass") +
+    stat_smooth(method = "gam", formula = y ~ s(x), size = 1)
+
+??stats_smooth
+```
+
+# Querying an API
+
+An example of a Web API is via the (tidycensus)[https://walker-data.com/tidycensus] package.
+
+At the time of writing you will need to get an API key via the following form:
+https://api.census.gov/data/key_signup.html
+
+You will then, assuming you have R studio install the key via the census_api_key function.
+
+Please note: If you are using a web API that delivers sensitive information then you have to make sure that the Key is secured.
+
+For more information on [census data sources](https://rconsortium.github.io/censusguide/r-packages-all.html) in R
+
+
+```{r,  warning=FALSE, message=FALSE}
+
+library(tidycensus)
+? census_api_key
+#census_api_key("aaa82de96c42f1542c1b76d0cec8574e04dc6e05", install=TRUE)
+#Your API key has been stored in your .Renviron and can be accessed by Sys.getenv("CENSUS_API_KEY"). 
+# To use now, restart R or run `readRenviron("~/.Renviron")`
+
+# Example of getting some information
+age10 <- get_decennial(geography = "state", 
+                       variables = "P013001", 
+                       year = 2010)
+
+# Example of loading variables.
+v19 <- load_variables(2019, "acs5", cache = TRUE)
+View(v19)
+```
+
+# Webscrapping
+
+This section provides examples of getting data from the Internet. The examples are not comprehensive as we wish to show you that there are many opportunities.
+
+# Data in one file
+
+Many Scientists and organisations have released their data sets after publication. Here are a few [examples](https://github.com/tacookson/data)
+
+```{r}
+# https://github.com/tacookson/data/tree/master/britain-bombing-ww2
+bombing <- read.csv("https://raw.githubusercontent.com/tacookson/data/master/britain-bombing-ww2/bombings.csv")
+
+gifts <- read.csv("https://raw.githubusercontent.com/tacookson/data/master/us-government-gifts/gifts.csv")
+gifts %>% filter(!is.na(value_usd)) %>% group_by(year_received) %>% 
+    summarise_at(vars(value_usd),list(~ mean(., trim = 1), ~ length(.),~ max(.)))
+?max
+?length
+```
+
+These data sets are opportunistic in the sense that you would need to search for the data and perhaps see the value and reuse of the data after discovery.
+
+Obviously the bomb site data is not of much value. However, perhaps the amount of contributions in terms of gifts would act as a proxy viable around political focus?
+
+# Stockmarket
+
+Perhaps, a job market signal such as the decrease in adverts for a particular occupation proceeds or happens later than a signal in the stockmarket?
+
+In the coding example below we look at how the price of Amazon stocks has changed over time.
+
+Due to interest in the theme, packages such as `quantmod` are vigorously developed. It is therefore wise to keep track of which version of the package you are using in case your code breaks over time.
+
+Also remember to save any data you pickup from the Internet and set a version number in the filename when appropriate
+
+
+```{r,  warning=FALSE, message=FALSE}
+# https://www.rdocumentation.org/packages/quantmod/versions/0.4.18/topics/getSymbols
+my.symbol <- "AMZN"
+?getSymbols
+my.shares <- getSymbols(my.symbol, from = '2019-01-01',
+                            to = "2020-12-01",warnings = FALSE,
+                            auto.assign = FALSE)
+as.data.frame(my.shares)
+plot(my.shares, main=my.symbol)
+
+barChart(my.shares)
+?barChart
+
+# 0.4.18
+packageVersion("quantmod")
+
+# Your full environment
+print(sessionInfo())
+
+# Remember to keep track of versions of information. You may need to prove/retrace your steps
+#save(my.shares, file = "shares-amzn-16-03.Rdata", compress=T)
+```
+
+# Advanced
+
+The `Rvest` package allows you to load a webpage or a series of webpages into memory and then extract the information you need.
+
+The code next downloads a local Wikipedia page and extracts all of it's links.
+Simply change the `my.url` variable and try for online sites such as https://google.com etc.
+
+Scrapping normally involves pulling data off the Internet, for example stored in table format, and then post processing.
+Scrapping is fragile as web pages are liable to change.
+
+```{r, warning=FALSE, message=FALSE}
+my.url <- "RAW/Data-Wikipedia.html"
+html <- read_html(my.url)
+links <-  html %>% html_nodes("a") %>% html_attr("href")
+?html_attr
+?html_nodes
+df.links <- as.data.frame(unique(links))
+?unique
+```
+
+
+# A word of warning
+
+There are many data sets and packages with related data sets scattered across the Internet.
+
+For example here are a brief list of packages for the Corona virus.
+
+* [cdccovidview](https://cinc.rud.is/web/packages/cdccovidview/index.html)
+* [coronavirus](https://cran.r-project.org/web/packages/coronavirus/coronavirus.pdf)
+* [covid](https://github.com/CBDRH/covoid)
+* [COVID19](https://cran.r-project.org/web/packages/COVID19/COVID19.pdf)
+* [covid19italy](https://github.com/Covid19R/covid19italy)
+* [covdata](https://github.com/kjhealy/covdata/)
+* [nCov2019](https://github.com/GuangchuangYu/nCov2019)
+* [tidycovid19](https://github.com/joachim-gassen/tidycovid19)
+
+> The value of the data and the data completeness varies considerably.
+
+Before using review. Don't trust any source from the Internet.

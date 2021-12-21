@@ -1,0 +1,187 @@
+---
+title: "Quick Visualizations"
+output: 
+  html_notebook: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    self_contained: yes
+---
+
+```{r, echo=FALSE}
+# Ignore as just removing noisy messages when packages start
+sp <- suppressPackageStartupMessages
+```
+
+# Introduction
+
+In this notebook we are going to explore how to use GGPLOT2 and extensions to provide visualizations. 
+
+> Within a few lines of code you can produce publication quality plots.
+
+For examples visit the [R Gallery](https://www.r-graph-gallery.com/ggplot2-package.html)
+
+Remember, the hardest part of most Data Science projects is the collection of data and then understanding and cleaning. Visualizations is developed appropriately can condense information into a story. Visualizations help you avoid incorrect assumptions.
+
+# Incremental Development
+
+GGPLOT2 is great for incremental development as you can save each set of instructions in an object and then plot. You can tweak by adding an extra instruction afterwards and then plot again.
+
+* First we are going to process the data again through a data pipeline. 
+* Next, we will incrementally build a plot.
+* Finally we will use a GGPLOT extension to create a word cloud via `geom_text_wordcloud`
+
+
+```{r}
+sp(library(tidyverse))
+sp(library(tidytext))
+sp(library(ggthemes))
+
+# Data pipeline
+file.jobs <- "../../DATA/MonsterBoard-2013-n=20000.Rdata"
+load(file.jobs)
+my.job <- tibble(Row = seq_along(sample$JobBody[1:1000]) , text = sample$JobBody[1:1000])
+data(stop_words)
+stop_words <- rbind(stop_words,c("nbsp","Custom"))
+my.words.bi <- my.job %>%  unnest_tokens(word, text, token = "ngrams", n = 2)
+my.freq.bi <- my.words.bi %>%
+  count(word, sort = TRUE) 
+my.freq.bi.cleaned <-  my.freq.bi %>% separate(word, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>% 
+  unite(word,word1, word2, sep = " ")
+
+head(my.freq.bi.cleaned, n=10)
+
+# Ugly
+my.plot <- ggplot(my.freq.bi.cleaned[1:20,], aes(x = reorder(word, n),y=n)) +
+    geom_col(fill="yellow",color="gold") + geom_point(color="blue", size=5)
+my.plot
+
+# Flip columns
+my.plot <- my.plot + coord_flip()
+my.plot
+
+# Add text
+my.plot <- my.plot +  geom_text(aes( label = n),hjust = 2, color="darkblue") 
+my.plot
+
+# Percentage labels
+my.plot <- my.plot + scale_y_continuous(labels = scales::percent)
+my.plot
+
+# Add Title
+?ggtitle
+my.plot <- my.plot + ggtitle("Example Plot", 
+                             subtitle= paste("Mean frequency:", round(mean(my.freq.bi$n))))
+my.plot
+
+# Add a x, y labels
+?xlab
+my.plot <- my.plot + xlab("X axis") + ylab("Y label")
+my.plot
+
+# Add a theme
+my.plot <- my.plot + theme_linedraw()
+my.plot
+
+#install.packages("ggwordcloud")
+# https://lepennec.github.io/ggwordcloud/
+??geom_text_wordcloud
+sp(library(ggwordcloud))
+set.seed(1234)
+my.plot.cloud <- ggplot(my.freq.bi.cleaned[1:40,], aes(label=word,size=n)) + geom_text_wordcloud(shape="star", color="darkblue") +
+  scale_size_area(max_size = 7) + theme_minimal() 
+my.plot.cloud
+
+```
+
+# Sales vs Not Sales job Adverts
+
+Generally, we should be comparing groups. For example asking the question:
+
+> ***What is the difference in textual signals between***
+
+* Occupations
+* Salary level
+* Educational Level
+* Rural vs urban
+* ETC.
+
+In the following example we ask
+
+> Is there any difference in the use of words between jobs with the word SALE in the job title and not? 
+
+A plot of the frequency in words for both categories produces the desired visual.
+
+
+```{r}
+?grepl
+# Total number of adverts with a Job title with sales
+sum(grepl("sales",sample$JobTitle, ignore.case = TRUE))
+
+# Create a subset of sales jobs
+sales <- sample$JobBody[grepl("sales",sample$JobTitle, ignore.case = TRUE)]
+sales <- tibble(Row = seq_along(sales[1:1000]) , text = sales[1:1000])
+
+# Create a subset of not sales jobs
+not.sales <- sample$JobBody[!grepl("sales",sample$JobTitle, ignore.case = TRUE)]
+not.sales <- tibble(Row = seq_along(not.sales[1:1000]) , text = not.sales[1:1000])
+
+# Data pipeline again
+data(stop_words)
+stop_words <- rbind(stop_words,c("nbsp","Custom"))
+
+# Bigrams for sales and Not Sales
+# When you see code repeated time for a function
+# https://swcarpentry.github.io/r-novice-inflammation/02-func-R/
+my.words.bi.sales <- sales %>%  unnest_tokens(word, text, token = "ngrams", n = 2)
+my.freq.bi.sales <- my.words.bi.sales %>%
+    count(word, sort = TRUE) 
+my.freq.bi.cleaned.sales <-  my.freq.bi.sales %>% separate(word, c("word1", "word2"), sep = " ") %>% 
+    filter(!word1 %in% stop_words$word) %>%
+    filter(!word2 %in% stop_words$word) %>% 
+    unite(word,word1, word2, sep = " ")
+
+my.words.bi.not.sales <- not.sales %>%  unnest_tokens(word, text, token = "ngrams", n = 2)
+my.freq.bi.not.sales <- my.words.bi.not.sales %>%
+    count(word, sort = TRUE) 
+my.freq.bi.cleaned.not.sales <-  my.freq.bi.not.sales %>% separate(word, c("word1", "word2"), sep = " ") %>% 
+    filter(!word1 %in% stop_words$word) %>%
+    filter(!word2 %in% stop_words$word) %>% 
+    unite(word,word1, word2, sep = " ")
+
+# Create a Tidy table with the result
+both <- merge(my.freq.bi.cleaned.not.sales, my.freq.bi.cleaned.sales, by="word")
+names(both)
+names(both) <- c("word","not.sales","sales")
+
+# Check the least mentioned bigrams
+tail(both)
+
+# Remove the lowest frequencies as they tend to contain mistakes in input
+both <- both[both$not.sales > 20 & both$sales > 20,]
+
+# Cleaner
+tail(both)
+
+# Now the hard work is done, plot
+ggplot(both[1:300,],aes(x = sales, y = not.sales, label = word)) +
+    stat_smooth(method = lm) +
+    geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5, color="darkblue") +
+    theme_excel_new() +
+    ggtitle("Frequency of Bigrams sales vs not.sales")
+```
+# Question
+
+> What is the visualization telling us?
+
+
+# Package Versions
+
+This section is for debugging.
+
+```{r}
+print(sessionInfo())
+```
+
