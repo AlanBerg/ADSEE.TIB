@@ -1,11 +1,10 @@
 ## Lecture Structure
 
-This is a series of three online lectures last 4 hours each
+This is a series of three online text mining lectures that last 4 hours each. The audience are not assumed to have coding skills.
 
-
-
-### Method
-
+* [DATA](./DATA) - Data needed for code
+* [LECTURES](./LECTURES) - Lecture material
+* [SETUP](./SETUP) - SETUP instructions
 
 ## ADSEE
 
@@ -15,5 +14,6 @@ The main objective of the ADSEE project is to deliver useful educational and tra
 
 Special attention will be paid to data science in non-technical universities and its application in non-technical business, were previous knowledge in this area is not mandatory.
 
+The lectures were/are originally presented at the the [University of Siegen](https://www.uni-siegen.de/start/index.html.en) February/March 21
 
 

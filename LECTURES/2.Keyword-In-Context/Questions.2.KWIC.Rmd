@@ -1,0 +1,38 @@
+---
+title: 'Exercises: 2.KWIC'
+author: "Dr. Alan Berg"
+date: "11/01/2022"
+output: pdf_document
+---
+
+# Question 1
+
+Look up on the Internet the following terms in relationship to text
+mining and write down their definitions:
+
+* Token
+* Feature
+* Ngram
+* bigram
+* Lexical complexity
+* Dispersion
+* Attraction
+* Classification
+* Unsupervised
+* Supervised
+* Stop word
+* Stemming
+
+# Question 2
+
+Review the Orange3 website: https://orangedatamining.com/workflows/
+
+Write down answers for the following:
+
+* What is the functionality of the tool?
+* What is the current version?
+* What is a workflow?
+* How can this tool help in analyzing text?
+* Follow a workflow such as the [story arc](https://orangedatamining.com/workflows/). 
+
+> You can either do this with Oragne3 or via video's on the website

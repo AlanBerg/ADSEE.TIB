@@ -1,0 +1,33 @@
+---
+title: 'Exercises: 1.EDA'
+author: "Dr. Alan Berg"
+date: "11/01/2022"
+output: pdf_document
+---
+
+# Question 1
+
+* Which labour market themes are mentioned on the [CEDEFOP](https://www.cedefop.europa.eu/en/themes/skills-labour-market) and [Burning Glass](https://www.burning-glass.com/) websites?
+* How are the themes relevant within your context? 
+
+# Question 2
+
+Review the output from the notebook .nb.html file and write in your notes the following.
+
+* List the packages used and describe their purpose
+* List the new functions used and what they do
+* Describe any short recipes in your own words
+* Search the Internet for at least two links for similar examples
+
+# Question 3
+
+* Review the EDA output from the notebook.
+* Write in words the main opportunities and issues are related to which fields starting with the JobBody and postcode fields. Feel free to copy images into your report.
+* Note the top six fields that are most useful for your field of study and why
+* Conclude with a short summary of what would be needed to improve the data
+
+# Bonus
+
+* Verify that Rstudio is correctly installed on your computer
+* Clone the Github repo:
+* Run the code EDA.Demo.Rmd
