@@ -16,4 +16,6 @@ Special attention will be paid to data science in non-technical universities and
 
 The lectures were/are originally presented at the the [University of Siegen](https://www.uni-siegen.de/start/index.html.en) February/March 21
 
+## To Copy
 
+`git clone git@github.com:AlanBerg/ADSEE.TIB.git` 
