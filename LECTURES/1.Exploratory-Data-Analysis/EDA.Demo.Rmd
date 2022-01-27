@@ -60,7 +60,7 @@ city.list <- as.data.frame(table(City))
 # Order the cross tabulation
 city.list <- city.list[order(city.list$Freq, decreasing=TRUE),]
 # Look at the first ten entries
-head(city.list,n=10)
+head(city.list,n=100)
 ```
 The word London has been written a number of times in slightly different upper and lower case formats.
 
@@ -100,7 +100,7 @@ plt.city <- ggplot(city.list.20, aes(x=reorder(City,Freq),y=Freq)) +
     geom_bar(fill="blue",stat="identity") + 
     coord_flip() +
     xlab("City") + ylab("Number of advertisments") +
-    ggtitle("Location of Advertisments")
+   ggtitle("Location of Advertisments")
 
 plt.city
 ```
@@ -110,7 +110,7 @@ With minor effort we can create a look and a feel using different themes from th
 
 ```{r}
 library(ggthemes)
-plt.city + theme_hc()
+plt.city + theme_economist()
 
 ```
 # Postal Codes
@@ -156,9 +156,9 @@ class(DateActive)
 
 # Let's make our lives easier
 sp(library(lubridate))
-# ?wday
+ ?wday
 # Let's look at the first entry to show how things work
-wday(DateActive[1], label=TRUE)
+wday(DateActive[1], label=F)
 # Let's create a new dimension named WDAY with the day of the week of the DATE assigned
 sample$WDAY <- wday(DateActive, label=TRUE)
 
@@ -204,7 +204,7 @@ It is straight forward to save data in one format to another within R. Here we c
 
 ```{r}
 # You may need to Change the location of data file
-file.kwic.Rdata <- "../../DATA/KWIC.Rdata"
+file.kwic.Rdata <- "../../DATA/KWIC.HERE.Rdata"
 # Notice Significantly compressed
 save(df.KWIC, file = file.kwic.Rdata, compress=TRUE)
 ```
