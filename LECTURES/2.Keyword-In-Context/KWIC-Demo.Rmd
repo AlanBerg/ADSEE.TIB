@@ -41,7 +41,7 @@ class(sample$JobBody)
 jb.len <- as.data.frame(nchar(sample$JobBody))
 names(jb.len) <- "No.Characters"
 # What does the data look like
-head(jb.len)
+head(jb.len, n=10)
 
 # Make a nice bar chart
 ggplot(jb.len, aes(x=No.Characters))+ geom_bar()+
@@ -103,9 +103,7 @@ sample(1:4,5,replace=TRUE)
 # Let's start at a known point in the sequence
 set.seed(1245)
 # Expect 2 2 2 4 2
-sample(1:4,5,replace=TRUE)
-
-# Count the number of rows of the badly named sample data.table
+sample(1:20,5,replace=TRUE)# Count the number of rows of the badly named sample data.table
 no.row <- nrow(sample)
 
 # Fix the location in the sequence of pseudo random numbers
@@ -117,6 +115,8 @@ rows <- sample(1:no.row,size=2, replace=FALSE)
 
 # Display the JobBody for the rows selected
 sample$JobBody[rows]
+
+sample$Keywords[1:3]
 ```
 
 # KWIC
@@ -139,7 +139,7 @@ rows[1]
 
 # Look for the word Financial
 # (A) for 1 sample
-kwic(tokens(sample$JobBody[rows[1]]),pattern = "Financial", window = 3, valuetype = "fixed")
+kwic(tokens(sample$JobBody[rows[1]]),pattern = "Financial", window = 6, valuetype = "fixed")
 
 # (B) Now lets store results in a data.frame for the word gender and legal
 kwic(tokens(sample$JobBody[rows]),pattern = "Financial", window = 3, valuetype = "fixed")
@@ -163,7 +163,7 @@ info %>%
                             y = Freq), stat = "identity",
                         fill = "darkred") + coord_flip() +
     labs(title = "Frequency of words before the word gender",
-         subtitle = "KWIC") + xlab("Pre terms")
+         subtitle = "KWIC") + xlab("Pre terms") + theme_pander()
 ```
 
 # Package Versions

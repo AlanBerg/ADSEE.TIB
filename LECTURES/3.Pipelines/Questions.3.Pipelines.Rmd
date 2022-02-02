@@ -1,7 +1,7 @@
 ---
 title: 'Exercises: 3.Pipelines'
 author: "Dr. Alan Berg"
-date: "11/01/2022"
+date: "03/02/2022"
 output: pdf_document
 ---
 
@@ -15,28 +15,37 @@ Visit Google scholar and look for term “ Job Market Intelligence .” Review o
 
 Create a list of 10 alternative search terms and see if you can discover extra useful papers
 
+Find and read:
+
+> Studying the UK Job Market During the COVID 19 Crisis with Online Job Ads - Rudy Arthur
+
 
 # Question 3
 
-Review the output from the notebook .nb.html file and write in your notes the following.
-
+Review the output from **All** the notebook .nb.html files and write in your notes the following.
 * List the packages used and describe their purpose
 * List the new functions used and what they do
 * Describe any short recipes in your own words
 * Search the Internet for at least two links for similar examples
 
+
 # Question 4
 
-Search the Internet for at least 3 text mining tools, making notes:
-
-* What are the techniques used by the tools?
-* Which tool(s) are your favorite and why?
-* What are the limitations of an application compared to a programming language?
-* What are the limitations of a programming language compared to an application?
-* What are the shared strengths?
+Visit the following link to the `Big book of R`. Which books most use to you?
+https://www.bigbookofr.com/
 
 # Question 5
 
-Visit the following link to the `Big book of R`. Which books may boe of use to you?
-https://www.bigbookofr.com/
+In the books you find interesting cut and copy recipes to a text document and then write down what the recipes do.
+
+# Question 6
+
+Are there any books (from the link in question 4) that describe creating packages?
+Why are custom  packages useful for recipe collections?
+
+# Question 7
+
+Can you find any online books about using Git?
+
+
 
